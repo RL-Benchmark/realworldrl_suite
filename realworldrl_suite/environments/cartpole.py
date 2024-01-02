@@ -492,9 +492,8 @@ class RealWorldBalance(realworld_env.Base, cartpole.Balance):
         perturb_params = {
                     'pole_length': [1., 0.3],
                     'pole_mass': [0.1, 0.5],
-                    'joint_damping': [2e-6., 2e-2],
-                    'pole_length': [5e-4, 0.3],
-                }
+                    'joint_damping': [2e-6, 2e-2],
+                    'pole_length': [5e-4, 0.3]}
         self._perturb_params = perturb_params
 
   def update_physics(self):

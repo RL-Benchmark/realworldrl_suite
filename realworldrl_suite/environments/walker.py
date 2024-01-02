@@ -577,8 +577,7 @@ class RealWorldPlanarWalker(realworld_env.Base, walker.PlanarWalker):
                     'thigh_length': [0.225, 0.05],
                     'torso_length': [0.3, 0.05],
                     'joint_damping': [0.1, 0.5],
-                    'contact_friction': [0.7, 0.05],
-                }
+                    'contact_friction': [0.7, 0.05]}
         self._perturb_params = perturb_params
 
   def update_physics(self):

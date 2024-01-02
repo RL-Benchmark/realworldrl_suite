@@ -569,7 +569,7 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
                     'thigh_length': [0.25, 0.1],
                     'torso_density': [1000., 500.],
                     'joint_damping': [30., 10.],
-                    'contact_friction': [1.5, 0.5],
+                    'contact_friction': [1.5, 0.5]}
         self._perturb_params = perturb_params
 
   def update_physics(self):

@@ -28,7 +28,7 @@ from realworldrl_suite.utils import wrappers
 
 _DEFAULT_TIME_LIMIT = 10
 
-PERTURB_PARAMS = ['pole_length', 'pole_mass', 'joint_damping', 'slider_damping']
+PERTURB_PARAMS = ['pole_length', 'pole_mass', 'joint_damping', 'slider_damping', 'all']
 
 
 def load(task_name, **task_kwargs):
@@ -487,6 +487,15 @@ class RealWorldBalance(realworld_env.Base, cartpole.Balance):
         self._perturb_min = perturb_spec.get('min', 5e-4)
         self._perturb_max = perturb_spec.get('max', 3.0)
         self._perturb_std = perturb_spec.get('std', 0.3)
+      elif self._perturb_param == 'all':
+        # mean and variance of all parameters
+        perturb_params = {
+                    'pole_length': [1., 0.3],
+                    'pole_mass': [0.1, 0.5],
+                    'joint_damping': [2e-6., 2e-2],
+                    'pole_length': [5e-4, 0.3],
+                }
+        self._perturb_params = perturb_params
 
   def update_physics(self):
     """Returns a new Physics object with perturbed parameter."""
@@ -510,6 +519,20 @@ class RealWorldBalance(realworld_env.Base, cartpole.Balance):
     elif self._perturb_param == 'slider_damping':
       sliders_joint = mjcf.find('./worldbody/body/joint')
       sliders_joint.set('damping', str(self._perturb_cur))
+    elif self._perturb_param == 'all':
+      if hasattr(self, "_perturb_params"):
+        perturb_cur = dict()
+        for k, v in self._perturb_params.items():
+          perturb_cur[k] = max(1e-4, np.random.randn() * v[1] + v[0], 0)
+        pole = mjcf.find('./default/default/geom')
+        pole.set('fromto', '0 0 0 0 0 {}'.format(perturb_cur['pole_length']))
+        pole.set('mass', str(perturb_cur['pole_mass']))
+        pole_joint = mjcf.find('./default/default/joint')
+        pole_joint.set('damping', str(perturb_cur['joint_damping']))
+        sliders_joint = mjcf.find('./worldbody/body/joint')
+        sliders_joint.set('damping', str(perturb_cur['slider_damping']))
+    else: 
+      pass
 
     xml_string_modified = etree.tostring(mjcf, pretty_print=True)
     physics = Physics.from_xml_string(xml_string_modified, common.ASSETS)

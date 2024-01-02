@@ -40,8 +40,7 @@ _RUN_SPEED = 5
 _WALK_SPEED = 0.5
 
 PERTURB_PARAMS = [
-    'shin_length', 'torso_density', 'joint_damping', 'contact_friction'
-]
+    'shin_length', 'torso_density', 'joint_damping', 'contact_friction', 'all']
 
 
 def load(task_name, **task_kwargs):
@@ -564,6 +563,14 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
         self._perturb_min = perturb_spec.get('min', 0.1)
         self._perturb_max = perturb_spec.get('max', 4.5)
         self._perturb_std = perturb_spec.get('std', 0.5)
+      elif self._perturb_param == 'all':
+        # mean and variance of all parameters
+        perturb_params = {
+                    'thigh_length': [0.25, 0.1],
+                    'torso_density': [1000., 500.],
+                    'joint_damping': [30., 10.],
+                    'contact_friction': [1.5, 0.5],
+        self._perturb_params = perturb_params
 
   def update_physics(self):
     """Returns a new Physics object with perturbed parameter."""
@@ -601,6 +608,36 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
           part.find('./geom').set('friction', str(self._perturb_cur))
       floor_contact = mjcf.find('./worldbody/geom')  # Floor geom.
       floor_contact.set('friction', '{} .1 .1'.format(self._perturb_cur))
+    elif self._perturb_param == 'all':
+      if hasattr(self, "_perturb_params"):
+        perturb_cur = dict()
+        for k, v in self._perturb_params.items():
+          perturb_cur[k] = max(1e-4, np.random.randn() * v[1] + v[0], 0)
+        parts = mjcf.findall('./default/default/default')
+        for part in parts:
+          if part.get('class') == 'knee':
+            part.find('./geom').set(
+                'fromto', '0 0 0 {} 0 {}'.format(perturb_cur['shin_length'],
+                                                 -perturb_cur['shin_length']))
+        ankles = mjcf.findall('./worldbody/body/body/body/body')
+        for ankle in ankles:
+          ankle.set('pos', '{} 0 {}'.format(perturb_cur['shin_length'],
+                                            -perturb_cur['shin_length']))
+        torso_and_others = mjcf.findall('./worldbody/body/geom')
+        for item in torso_and_others:
+          if item.get('name') == 'torso':
+            item.set('density', str(perturb_cur['torso_density']))
+        joint_damping = mjcf.find('./default/default/joint')
+        joint_damping.set('damping', str(perturb_cur['joint_damping']))
+        parts = mjcf.findall('./default/default/default')
+        for part in parts:
+          if part.get('class') == 'toe':
+            part.find('./geom').set('friction', str(perturb_cur['contact_friction']))
+        floor_contact = mjcf.find('./worldbody/geom')  # Floor geom.
+        floor_contact.set('friction', '{} .1 .1'.format(perturb_cur['contact_friction']))
+      else:
+        pass
+
 
     xml_string_modified = etree.tostring(mjcf, pretty_print=True)
     physics = Physics.from_xml_string(xml_string_modified, common.ASSETS)

@@ -572,6 +572,13 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
                     'contact_friction': [1.5, 0.5]}
         self._perturb_params = perturb_params
 
+        # M: following params inactivated in 'all' setup
+        self._perturb_cur = perturb_spec.get('start', 0.7)
+        self._perturb_start = perturb_spec.get('start', 0.7)
+        self._perturb_min = perturb_spec.get('min', 0.01)
+        self._perturb_max = perturb_spec.get('max', 2.)
+        self._perturb_std = perturb_spec.get('std', 0.05)
+
   def update_physics(self):
     """Returns a new Physics object with perturbed parameter."""
     # Generate the new perturbed parameter.

@@ -566,7 +566,7 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
       elif self._perturb_param == 'all':
         # mean and variance of all parameters
         perturb_params = {
-                    'thigh_length': [0.25, 0.1],
+                    'shin_length': [0.25, 0.1],
                     'torso_density': [1000., 500.],
                     'joint_damping': [30., 10.],
                     'contact_friction': [1.5, 0.5]}

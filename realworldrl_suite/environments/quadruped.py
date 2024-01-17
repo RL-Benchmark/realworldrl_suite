@@ -566,10 +566,10 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
       elif self._perturb_param == 'all':
         # mean and variance of all parameters
         perturb_params = {
-                    'shin_length': [0.25, 0.1],
-                    'torso_density': [1000., 500.],
-                    'joint_damping': [30., 10.],
-                    'contact_friction': [1.5, 0.5]}
+                    'shin_length': [0.25, 0.25, 0.25, 2.0, 0.1],
+                    'torso_density': [1000., 1000., 500., 10000., 500.],
+                    'joint_damping': [30., 30., 10., 150., 10.],
+                    'contact_friction': [1.5, 1.5, 0.1, 4.5, 0.5]}
         self._perturb_params = perturb_params
 
         # M: following params inactivated in 'all' setup
@@ -619,7 +619,9 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
       if hasattr(self, "_perturb_params"):
         perturb_cur = dict()
         for k, v in self._perturb_params.items():
-          perturb_cur[k] = max(1e-4, np.random.randn() * v[1] + v[0], 0)
+          perturb_cur[k] = np.random.randn() * v[-1] + v[0]    
+          perturb_cur[k] = np.clip(perturb_cur[k], v[2], v[3])
+
         parts = mjcf.findall('./default/default/default')
         for part in parts:
           if part.get('class') == 'knee':

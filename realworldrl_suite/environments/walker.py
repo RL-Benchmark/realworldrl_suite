@@ -574,10 +574,10 @@ class RealWorldPlanarWalker(realworld_env.Base, walker.PlanarWalker):
       elif self._perturb_param == 'all':
         # mean and variance of all parameters
         perturb_params = {
-                    'thigh_length': [0.225, 0.05],
-                    'torso_length': [0.3, 0.05],
-                    'joint_damping': [0.1, 0.5],
-                    'contact_friction': [0.7, 0.05]}
+                    'thigh_length': [0.225, 0.225, 0.1, 0.7, 0.05],
+                    'torso_length': [0.3, 0.3, 0.1, 0.7, 0.05],
+                    'joint_damping': [0.1, 0.1, 0.1, 10., 0.5],
+                    'contact_friction': [0.7, 0.7, 0.01, 2., 0.05]}
         self._perturb_params = perturb_params
 
         # M: following params inactivated in 'all' setup
@@ -622,7 +622,8 @@ class RealWorldPlanarWalker(realworld_env.Base, walker.PlanarWalker):
       if hasattr(self, "_perturb_params"):
         perturb_cur = dict()
         for k, v in self._perturb_params.items():
-          perturb_cur[k] = max(1e-4, np.random.randn() * v[1] + v[0], 0)
+          perturb_cur[k] = np.random.randn() * v[-1] + v[0]    
+          perturb_cur[k] = np.clip(perturb_cur[k], v[2], v[3])
         thighs = mjcf.findall('./worldbody/body/body/geom')
         for thigh in thighs:
           thigh.set('pos', '0 0 {}'.format(-perturb_cur['thigh_length']))

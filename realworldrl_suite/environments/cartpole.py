@@ -490,10 +490,10 @@ class RealWorldBalance(realworld_env.Base, cartpole.Balance):
       elif self._perturb_param == 'all':
         # mean and variance of all parameters
         perturb_params = {
-                    'pole_length': [1., 0.3],
-                    'pole_mass': [0.1, 0.5],
-                    'joint_damping': [2e-6, 2e-2],
-                    'pole_length': [5e-4, 0.3]}
+                    'pole_length': [1., 1., 0.3, 3., 0.3],
+                    'pole_mass': [0.1, 0.1, 0.1, 10., 0.5],
+                    'joint_damping': [2e-6, 2e-6, 2e-6, 2e-1, 2e-2],
+                    'pole_length': [5e-4, 5e-4, 5e-4, 3.0, 0.3]}
         self._perturb_params = perturb_params
 
         # M: following params inactivated in 'all' setup
@@ -529,7 +529,8 @@ class RealWorldBalance(realworld_env.Base, cartpole.Balance):
       if hasattr(self, "_perturb_params"):
         perturb_cur = dict()
         for k, v in self._perturb_params.items():
-          perturb_cur[k] = max(1e-4, np.random.randn() * v[1] + v[0], 0)
+          perturb_cur[k] = np.random.randn() * v[-1] + v[0]    
+          perturb_cur[k] = np.clip(perturb_cur[k], v[2], v[3])
         pole = mjcf.find('./default/default/geom')
         pole.set('fromto', '0 0 0 0 0 {}'.format(perturb_cur['pole_length']))
         pole.set('mass', str(perturb_cur['pole_mass']))

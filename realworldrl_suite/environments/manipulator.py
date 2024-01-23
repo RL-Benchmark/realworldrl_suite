@@ -561,7 +561,7 @@ class RealWorldBring(realworld_env.Base, manipulator.Bring):
         lower_arm = mjcf.find('./worldbody/body/body/body/geom')
         lower_arm.set('fromto', '0 0 0 0 0 {}'.format(perturb_cur['lower_arm_length']))
         hand = mjcf.find('./worldbody/body/body/body/body')
-        hand.set('pos', '0 0 {}'.format(_perturb_cur['lower_arm_length']))
+        hand.set('pos', '0 0 {}'.format(perturb_cur['lower_arm_length']))
         # root damping
         joints = mjcf.findall('./worldbody/body/joint')
         for joint in joints:
@@ -569,7 +569,7 @@ class RealWorldBring(realworld_env.Base, manipulator.Bring):
             joint.set('damping', str(perturb_cur['root_damping']))
         # shoulder damping
         shoulder_joint = mjcf.find('./worldbody/body/body/joint')
-        shoulder_joint.set('damping', str(_perturb_cur['shoulder_damping']))
+        shoulder_joint.set('damping', str(perturb_cur['shoulder_damping']))
 
 
 

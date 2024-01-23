@@ -622,6 +622,7 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
           perturb_cur[k] = np.random.randn() * v[-1] + v[0]    
           perturb_cur[k] = np.clip(perturb_cur[k], v[2], v[3])
 
+        # shin length
         parts = mjcf.findall('./default/default/default')
         for part in parts:
           if part.get('class') == 'knee':
@@ -632,12 +633,15 @@ class RealWorldQuadruped(realworld_env.Base, base.Task):
         for ankle in ankles:
           ankle.set('pos', '{} 0 {}'.format(perturb_cur['shin_length'],
                                             -perturb_cur['shin_length']))
+        # torso density
         torso_and_others = mjcf.findall('./worldbody/body/geom')
         for item in torso_and_others:
           if item.get('name') == 'torso':
             item.set('density', str(perturb_cur['torso_density']))
+        # joint damping
         joint_damping = mjcf.find('./default/default/joint')
         joint_damping.set('damping', str(perturb_cur['joint_damping']))
+        # contact friction
         parts = mjcf.findall('./default/default/default')
         for part in parts:
           if part.get('class') == 'toe':

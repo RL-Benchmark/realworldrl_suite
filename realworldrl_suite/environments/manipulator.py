@@ -30,7 +30,7 @@ _CONTROL_TIMESTEP = .01  # (Seconds)
 _TIME_LIMIT = 10  # (Seconds)
 _ARM_JOINTS = ['arm_shoulder', 'arm_elbow']  # Used for constraints
 
-PERTURB_PARAMS = ['lower_arm_length', 'root_damping', 'shoulder_damping']
+PERTURB_PARAMS = ['lower_arm_length', 'root_damping', 'shoulder_damping', 'all']
 
 
 def load(task_name, **task_kwargs):
@@ -512,6 +512,22 @@ class RealWorldBring(realworld_env.Base, manipulator.Bring):
         self._perturb_min = perturb_spec.get('min', 0.1)
         self._perturb_max = perturb_spec.get('max', 10.0)
         self._perturb_std = perturb_spec.get('std', 0.1)
+      elif self._perturb_param == 'all':
+          # mean and variance of all parameters
+        perturb_params = {
+                    'lower_arm_length': [0.12, 0.12, 0.1, 0.25, 0.01],
+                    'root_damping': [2.0, 2.0, 0.1, 10.0, 0.1],
+                    'shoulder_damping': [1.5, 1.5, 0.1, 10.0, 0.1]}
+        self._perturb_params = perturb_params
+
+        # M: following params inactivated in 'all' setup
+        self._perturb_cur = perturb_spec.get('start', 0.12)
+        self._perturb_start = perturb_spec.get('start', 0.12)
+        self._perturb_min = perturb_spec.get('min', 0.1)
+        self._perturb_max = perturb_spec.get('max', 0.25)
+        self._perturb_std = perturb_spec.get('std', 0.01)
+
+
 
   def update_physics(self):
     """Returns a new Physics object with perturbed parameter."""
@@ -535,6 +551,27 @@ class RealWorldBring(realworld_env.Base, manipulator.Bring):
     elif self._perturb_param == 'shoulder_damping':
       shoulder_joint = mjcf.find('./worldbody/body/body/joint')
       shoulder_joint.set('damping', str(self._perturb_cur))
+    elif self._perturb_param == 'all':
+      if hasattr(self, "_perturb_params"):
+        perturb_cur = dict()
+        for k, v in self._perturb_params.items():
+          perturb_cur[k] = np.random.randn() * v[-1] + v[0]    
+          perturb_cur[k] = np.clip(perturb_cur[k], v[2], v[3])
+        # lower arm length
+        lower_arm = mjcf.find('./worldbody/body/body/body/geom')
+        lower_arm.set('fromto', '0 0 0 0 0 {}'.format(perturb_cur['lower_arm_length']))
+        hand = mjcf.find('./worldbody/body/body/body/body')
+        hand.set('pos', '0 0 {}'.format(_perturb_cur['lower_arm_length']))
+        # root damping
+        joints = mjcf.findall('./worldbody/body/joint')
+        for joint in joints:
+          if joint.get('name') == 'arm_root':
+            joint.set('damping', str(perturb_cur['root_damping']))
+        # shoulder damping
+        shoulder_joint = mjcf.find('./worldbody/body/body/joint')
+        shoulder_joint.set('damping', str(_perturb_cur['shoulder_damping']))
+
+
 
     xml_string_modified = etree.tostring(mjcf, pretty_print=True)
     physics = Physics.from_xml_string(xml_string_modified, common.ASSETS)

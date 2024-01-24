@@ -36,7 +36,7 @@ _STAND_HEIGHT = 1.4
 _WALK_SPEED = 1
 _RUN_SPEED = 10
 
-PERTURB_PARAMS = ['joint_damping', 'contact_friction', 'head_size']
+PERTURB_PARAMS = ['joint_damping', 'contact_friction', 'head_size', 'all']
 
 
 def load(task_name, **task_kwargs):
@@ -133,7 +133,7 @@ def realworld_stand(time_limit=_DEFAULT_TIME_LIMIT,
 
   task = RealWorldHumanoid(
       move_speed=0,
-      pure_state=False,
+      pure_state=True, # False,
       random=random,
       safety_spec=safety_spec,
       delay_spec=delay_spec,
@@ -226,7 +226,7 @@ def realworld_walk(time_limit=_DEFAULT_TIME_LIMIT,
 
   task = RealWorldHumanoid(
       move_speed=1,
-      pure_state=False,
+      pure_state=True, # False,
       random=random,
       safety_spec=safety_spec,
       delay_spec=delay_spec,
@@ -519,6 +519,22 @@ class RealWorldHumanoid(realworld_env.Base, humanoid.Humanoid):
         self._perturb_max = perturb_spec.get('max', 0.19)
         self._perturb_std = perturb_spec.get('std', 0.02)
 
+      elif self._perturb_param == 'all':
+        # mean and variance of all parameters
+        perturb_params = {
+                    'contact_friction': [0.7, 0.7, 0.05, 1.2, 0.1],
+                    'joint_damping': [0.2, 0.2, 0.01, 2.5, 0.2],
+                    'head_size': [0.09, 0.09, 0.01, 0.19, 0.02]}
+        self._perturb_params = perturb_params
+
+
+        self._perturb_cur = perturb_spec.get('start', 0.09)
+        self._perturb_start = perturb_spec.get('start', 0.09)
+        self._perturb_min = perturb_spec.get('min', 0.01)
+        self._perturb_max = perturb_spec.get('max', 0.19)
+        self._perturb_std = perturb_spec.get('std', 0.02)
+
+
   def update_physics(self):
     """Returns a new Physics object with perturbed parameter."""
     # Generate the new perturbed parameter.
@@ -542,6 +558,29 @@ class RealWorldHumanoid(realworld_env.Base, humanoid.Humanoid):
     elif self._perturb_param == 'head_size':
       geom_head = mjcf.find('./worldbody/body/body/geom')
       geom_head.set('size', '{}'.format(self._perturb_cur))
+
+    elif self._perturb_param == 'all':
+      if hasattr(self, "_perturb_params"):
+        perturb_cur = dict()
+        for k, v in self._perturb_params.items():
+          perturb_cur[k] = np.random.randn() * v[-1] + v[0]    
+          perturb_cur[k] = np.clip(perturb_cur[k], v[2], v[3])
+
+        # joint damping 
+        joint_damping = mjcf.find('./default/default/joint')
+        joint_damping.set('damping', str(perturb_cur['joint_damping']))
+
+        # contact friction
+        geom_contact = mjcf.find('./default/default/geom')  # Body geom.
+        geom_contact.set('friction', '{} .1 .1'.format(perturb_cur['contact_friction']))
+        floor_contact = mjcf.find('./worldbody/geom')  # Floor geom.
+        floor_contact.set('friction', '{} .1 .1'.format(perturb_cur['contact_friction']))
+
+        # head size
+        geom_head = mjcf.find('./worldbody/body/body/geom')
+        geom_head.set('size', '{}'.format(perturb_cur['head_size']))
+     
+
     xml_string_modified = etree.tostring(mjcf, pretty_print=True)
     physics = Physics.from_xml_string(xml_string_modified, common.ASSETS)
 

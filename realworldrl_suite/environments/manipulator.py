@@ -513,7 +513,7 @@ class RealWorldBring(realworld_env.Base, manipulator.Bring):
         self._perturb_max = perturb_spec.get('max', 10.0)
         self._perturb_std = perturb_spec.get('std', 0.1)
       elif self._perturb_param == 'all':
-          # mean and variance of all parameters
+        # mean and variance of all parameters
         perturb_params = {
                     'lower_arm_length': [0.12, 0.12, 0.1, 0.25, 0.01],
                     'root_damping': [2.0, 2.0, 0.1, 10.0, 0.1],
